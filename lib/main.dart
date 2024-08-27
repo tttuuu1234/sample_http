@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sample_http/api_client.dart';
 import 'package:http/http.dart' as http;
+import 'package:sample_http/exception.dart';
 
 void main() {
   runApp(const MyApp());
@@ -32,14 +33,25 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  late ApiClient _client;
+
   @override
-  Widget build(BuildContext context) {
-    final client = ApiClient(
+  void initState() {
+    const token = String.fromEnvironment('GITHUB_TOKEN');
+    _client = ApiClient(
       http.Client(),
       baseUrl: 'https://api.github.com',
-      defaultHeaders: {},
+      defaultHeaders: {
+        'Accept': 'application/vnd.github+json',
+        'Authorization': 'Bearer $token',
+        'X-GitHub-Api-Version': '2022-11-28'
+      },
     );
+    super.initState();
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -51,7 +63,14 @@ class _MyHomePageState extends State<MyHomePage> {
           children: <Widget>[
             ElevatedButton(
               onPressed: () async {
-                final res = await client.get(path: '');
+                try {
+                  final res = await _client.get(path: 'repositories');
+                  print(res);
+                } on ApiException catch (e) {
+                  print(e.message);
+                } on Exception catch (e) {
+                  print(e);
+                }
               },
               child: const Text('リポジトリ取得'),
             ),
